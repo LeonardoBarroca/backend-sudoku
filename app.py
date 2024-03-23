@@ -1,12 +1,14 @@
 from flask import Flask, jsonify, request, make_response
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 message_count = 0
 
 @app.route('/api/texto', methods=['GET'])
-def get_texto():
-    return make_response(jsonify("Este é um exemplo de texto retornado pela API em Flask."))
+def get_text():
+    return make_response(jsonify("Funcionou!"))
 
 
 @app.route('/api/message', methods=['GET', 'POST'])
