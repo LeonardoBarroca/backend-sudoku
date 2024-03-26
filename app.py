@@ -3,15 +3,10 @@ from flask_cors import CORS
 from PIL import Image
 import io
 import cv2
+import numpy as np
 
 app = Flask(__name__)
 CORS(app)
-
-message_count = 0
-
-@app.route('/api/texto', methods=['GET'])
-def get_text():
-    return make_response(jsonify("Funcionou!"))
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
@@ -19,11 +14,14 @@ def upload_image():
         return jsonify({'error': 'Nenhuma imagem encontrada'}), 400
 
     image = request.files['image']
-    # Processar a imagem aqui (por exemplo, salvar em disco, processamento de imagem, etc.)
+    red = int(request.form.get('red', 0))
+    green = int(request.form.get('green', 0))
+    blue = int(request.form.get('blue', 0))
 
-    image_bytes = image.read()  # Lê os bytes da imagem
-    #processed_image_bytes = process_image(image_bytes)  # Função fictícia para processar a imagem
-    processed_image = io.BytesIO(image_bytes)  # Convertendo bytes em um objeto BytesIO
+
+    image_bytes = image.read()
+    processed_image_bytes = process_image(image_bytes, red, green, blue)
+    processed_image = io.BytesIO(processed_image_bytes)  # Convertendo bytes em um objeto BytesIO
 
     # Retornando a imagem processada como um arquivo binário
     return send_file(
@@ -31,6 +29,20 @@ def upload_image():
         mimetype='image/jpeg'  # Especifique o mimetype correto para o tipo de imagem
     )
 
+def process_image(image_bytes, red, green, blue):
+    # Carrega a imagem em um array numpy usando OpenCV
+    image_array = np.frombuffer(image_bytes, np.uint8)
+    image_cv2 = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+    # Aplica os valores RGB na imagem
+    image_cv2[:, :, 0] += blue
+    image_cv2[:, :, 1] += green
+    image_cv2[:, :, 2] += red
+
+    # Converte a imagem de volta para bytes
+    _, processed_image_bytes = cv2.imencode('.jpg', image_cv2)
+
+    return processed_image_bytes.tobytes()
 
 if __name__ == '__main__':
     app.run()
